@@ -2,7 +2,7 @@
 void Example(){
 	cout<<"GenGaus() generates random gaussian distribution."<<endl;
 	cout<<"FitGaus() Fits the data with gaussian function."<<endl;
-
+	cout<<"FitPMT(TString filename) Fits PMT respose spectrum"<<endl;
 }
 
 
@@ -55,3 +55,46 @@ void FitGaus()
 	double sigma = gausf->GetParameter(2);
 	cout<<"peak, mean, sigma is: "<<peak<<" , "<<mean<<" , "<<sigma<<endl;
 }
+void FitPMT(TString filename){
+
+	TFile* file = new TFile(filename,"read");//load the file in read mode.
+	TTree* tree = (TTree*)file->Get("data");//get the tree from the file.
+	TH1D* h = new TH1D("pmth","PMT Spectrum",400,100,500);
+	tree->Draw("ADC[0]>>pmth");	//
+	TF1* fg = new TF1("PMT","PMTf", 0,1000,8);
+	fg->SetParLimits(0,170,190);
+	fg->SetParLimits(1,0.1,5);
+	fg->SetParLimits(2,0.5,5);
+	fg->SetParLimits(3,30,45);
+	fg->SetParLimits(4,6,20);
+	fg->SetParLimits(5,30000,1000000);
+	fg->SetParLimits(6,0.1,100);
+	fg->SetParLimits(7,300,500);
+	fg->SetRange(150,270);
+  h->Fit("PMT","R");
+	double par[8];
+	for(int i=0;i<8;i++){
+		par[i]=fg->GetParameter(i);
+	}
+	TF1* ped_f = new TF1("pedf","Ngausf",0,1000,3);
+	double pp=par[5]*Poison_dist(par[2],0);
+	ped_f->SetParameters(par[0],par[1],pp);
+	ped_f->SetLineColor(kBlack);
+	ped_f->Draw("SAME");
+	TF1* bg_f = new TF1("bgf","Backgroundf",0,1000,3);
+	bg_f->SetParameters(par[0],par[6],par[7]);
+	bg_f->SetLineColor(kBlack);
+	bg_f->Draw("SAME");
+	
+	double spp = par[5]*Poison_dist(par[2],1); 
+	TF1* single_f = new TF1("singlef","Ngausf",0,1000,3);
+	single_f->SetParameters(par[0]+par[3],par[4],spp);
+	single_f->SetLineColor(kBlue);
+	single_f->Draw("SAME");
+	double dpp = par[5]*Poison_dist(par[2],2); 
+	TF1* double_f = new TF1("doublef","Ngausf",0,1000,3);
+	double_f->SetParameters(par[0]+2*par[3],sqrt(2)*par[4],dpp);
+	double_f->SetLineColor(kGreen);
+	double_f->Draw("SAME");
+}
+
