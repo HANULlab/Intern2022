@@ -6,16 +6,22 @@ void ReadFile(){
 	TTree* trees[10];
 	TCanvas* c1 = new TCanvas("c1","c1",1500,700);
 	c1->Divide(4,3);
-	TH1I* hist[10] ;
+	TH1* hist[10] ;
+	TString ents = "qdc[10]>>";
+	for(int i=0;i<10;++i){
+		TString ht = Form("hist%d",i);
+		hist[i] = new TH1D(ht,ht,100,0,1000);
+	}
 	for(int i = 0;i<10;++i){
-		hist[i] = new TH1I(Form("h%d",i),"h",100,0,1000);
+		TString ht = Form("hist%d",i);
 		TString filename = filename_base+runs[i]+".root";
 		files[i]= new TFile(filename,"read");
 		trees[i]=(TTree*)files[i]->Get("tree");
 		c1->cd(i+1);
-		trees[i]->Draw(Form("qdc[10]>>h%d(100,0,1000)",i));
-		hist[i]->SetLineColor(i);
-		hist[i]->Draw("same");
+		cout<<ents+ht<<endl;
+		trees[i]->Draw(ents+ht,"");
+//		hist[i]->SetLineColor(i);
+//		hist[i]->Draw();
 	}
 
 
